@@ -39,7 +39,8 @@
         "php":      ">=8.2",
         "ext-json": "*",
         "psr/log":  "^3.0",
-        "artex/logger": "^1.0"
+        "artex/logger": "^1.0",
+        "jamesgober/benchmark": "^1.0"
     },
     "require-dev": {
         "phpunit/phpunit": "^10.5",
