@@ -13,7 +13,21 @@
     </sup>
 </h1>
 
-**Artex Debug** 
+**Artex Debug** is a modular debugging and profiling library for PHP applications, designed to capture errors, exceptions, and performance metrics in real time. It features a custom error handler, execution profiler, logging integration, and an extensible debug bar for web and CLI environments. Lightweight yet powerful, it seamlessly integrates with Artex Essence, Laravel, CodeIgniter, and other frameworks. Whether in development or production, Artex Debug helps track down issues efficiently without bloating your application.
+
+&nbsp;
+
+<p align="center">
+    <a href="https://packagist.org/packages/artex/debug">
+        <img src="https://img.shields.io/packagist/v/artex/debug" alt="Latest Version">
+    </a>
+    <a href="https://packagist.org/packages/artex/debug">
+        <img src="https://img.shields.io/packagist/dt/artex/debug" alt="Total Downloads">
+    </a>
+    <a href="LICENSE">
+        <img src="https://img.shields.io/badge/license-Apache%202.0-blue" alt="License">
+    </a>
+</p>
 
 &nbsp;
 
