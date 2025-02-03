@@ -8,7 +8,7 @@
     <sup>
         <br>
         <small><small><small>
-        FAST PSR-3 LOGGER
+        REPORTING &amp; PROFILING
         </small></small></small>
     </sup>
 </h1>
