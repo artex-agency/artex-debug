@@ -10,8 +10,8 @@
  */
 namespace Artex\Debug;
 
-use Throwable;
-use ErrorException;
+use Artex\Debug\Helpers;
+use \ErrorException;
 
 /**
  * ErrorHandler - Handles PHP errors and converts them into exceptions 
@@ -40,7 +40,8 @@ class ErrorHandler
     }
 
     /**
-     * Registers a callback to be executed before a fatal error or uncaught exception.
+     * Registers a callback to be executed before a fatal error or 
+     * uncaught exception.
      *
      * @param callable $callback The callback function.
      * @return void
@@ -51,19 +52,31 @@ class ErrorHandler
     }
 
     /**
-     * Executes registered fatal error callbacks.
+     * Executes registered fatal error callbacks with exception data.
      *
+     * @param Throwable $exception The exception being handled.
      * @return void
      */
-    private static function triggerFatalCallbacks(): void
+    private static function triggerFatalCallbacks(\Throwable $exception): void
     {
         foreach (self::$fatalCallbacks as $callback) {
-            $callback();
+            if (is_array($callback)) {
+                [$class, $method] = $callback;
+
+                if (is_object($class)) {
+                    $class->$method($exception); // Instance method
+                } else {
+                    $class::$method($exception); // Static method
+                }
+            } else {
+                $callback($exception); // Direct function or closure
+            }
         }
     }
 
     /**
-     * Handles PHP errors and converts them into exceptions if necessary.
+     * Handles PHP errors and converts them into exceptions if 
+     * necessary.
      *
      * @param int    $severity The severity level of the error.
      * @param string $message  The error message.
@@ -75,18 +88,12 @@ class ErrorHandler
     public static function handleError(int $severity, string $message, string $file, int $line): void
     {
         if (!(error_reporting() & $severity)) {
-            // Error is suppressed by @ operator
-            return;
+            return; // Ignore suppressed errors
         }
-
-        $logMessage = "[Error] Severity: $severity | Message: $message | File: $file | Line: $line";
-        
-        if (class_exists(Debug::class)) {
-            Debug::log('error', $logMessage);
-        } else {
-            error_log($logMessage);
-        }
-
+    
+        // Log the error before throwing
+        Debug::getInstance()->log('error', "[Error] {$message} in {$file} on line {$line}");
+    
         if (self::isFatal($severity)) {
             throw new ErrorException($message, 0, $severity, $file, $line);
         }
@@ -98,38 +105,46 @@ class ErrorHandler
      * @param Throwable $exception The uncaught exception.
      * @return void
      */
-    public static function handleException(Throwable $exception): void
+    public static function handleException(\Throwable $exception): void
     {
-        self::triggerFatalCallbacks(); // 🔥 Execute fatal callbacks BEFORE logging the exception
-
-        $logMessage = "[Exception] " . get_class($exception) . ": " . $exception->getMessage()
-            . " in " . $exception->getFile() . " on line " . $exception->getLine();
-
-        if (class_exists(Debug::class)) {
-            Debug::log('critical', $logMessage);
+        $logMessage = "[Exception] " . get_class($exception) . 
+                    ": " . $exception->getMessage() . 
+                    " in " . $exception->getFile() . 
+                    " on line " . $exception->getLine();
+    
+        Debug::getInstance()->log('critical', $logMessage);
+    
+        if (Helpers::isCli()) {
+            CLIOutput::error($logMessage);
         } else {
-            error_log($logMessage);
+            self::triggerFatalCallbacks($exception);
         }
+    
+        exit(1);
     }
 
     /**
      * Handles fatal errors on script shutdown.
      *
+     * Converts fatal errors into exceptions.
+     *
+     * @param array|null $testError Used for unit testing to simulate a shutdown error.
      * @return void
      */
-    public static function handleShutdown(): void
+    public static function handleShutdown(?array $testError = null): void
     {
-        $error = error_get_last();
-        if ($error !== null && self::isFatal($error['type'])) {
-            self::triggerFatalCallbacks(); // 🔥 Execute fatal callbacks BEFORE handling error
-
-            $logMessage = "[Fatal Error] Message: {$error['message']} | File: {$error['file']} | Line: {$error['line']}";
-
-            if (class_exists(Debug::class)) {
-                Debug::log('critical', $logMessage);
-            } else {
-                error_log($logMessage);
-            }
+        $error = $testError ?? error_get_last();
+    
+        if ($error && self::isFatal($error['type'])) {
+            $exception = new ErrorException(
+                $error['message'],
+                0,
+                $error['type'],
+                $error['file'],
+                $error['line']
+            );
+    
+            self::handleException($exception);
         }
     }
 
@@ -139,7 +154,7 @@ class ErrorHandler
      * @param int $severity The error severity level.
      * @return bool True if the error is fatal, false otherwise.
      */
-    private static function isFatal(int $severity): bool
+    public static function isFatal(int $severity): bool
     {
         return in_array($severity, [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR, E_USER_ERROR], true);
     }

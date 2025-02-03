@@ -16,10 +16,9 @@
 namespace Artex\Debug;
 
 use Artex\Debug\ErrorHandler;
-use Artex\Debug\ExceptionHandler;
 use Artex\Debug\DataCollector;
-use Artex\Debug\Profiler;
 use Artex\Debug\DebugBar;
+use Artex\Debug\Helpers;
 use Artex\Debug\CLIOutput;
 use Artex\Debug\Drivers\LogDriver;
 use Artex\Debug\Drivers\FileDriver;
@@ -39,25 +38,22 @@ class Debug
     private static ?Debug $instance = null;
     private Config $config;
     private DataCollector $collector;
-    private Profiler $profiler;
     private DebugBar $debugBar;
     private CLIOutput $cliOutput;
     private Benchmark $benchmark;
 
     private function __construct()
     {
-        $this->config = new Config();
+        $this->config    = new Config();
         $this->collector = new DataCollector();
-        $this->profiler = new Profiler();
-        $this->debugBar = new DebugBar();
+        $this->debugBar  = new DebugBar();
         $this->cliOutput = new CLIOutput();
         $this->benchmark = new Benchmark([
             'track_peak_memory' => true
         ]);
 
-        // Register error and exception handlers
+        // Register error handler
         ErrorHandler::register();
-        ExceptionHandler::register();
     }
 
     /**
@@ -95,20 +91,31 @@ class Debug
             'debug', 'info', 'notice', 'warning',
             'error', 'critical', 'alert', 'emergency'
         ];
-
+    
         if (!in_array(strtolower($level), $validLevels, true)) {
             throw new \InvalidArgumentException("Invalid log level: {$level}");
         }
-
+    
         $logEntry = [
             'timestamp' => date('Y-m-d H:i:s'),
             'level'     => strtoupper($level),
             'message'   => $message,
             'context'   => $context
         ];
-
-        // Use the default driver (FileDriver, LogDriver, MemoryDriver)
-        $driver = new FileDriver();
+    
+        // Store logs in DataCollector
+        $this->collector->addLog($level, $message, $context);
+    
+        // Write logs to the correct Logger (Driver)
+        $driverType = Config::get('log_driver', 'file');
+    
+        $driver = match ($driverType) {
+            'file'   => new FileDriver(),
+            'log'    => new LogDriver(),
+            'memory' => new MemoryDriver(),
+            default  => new FileDriver(),
+        };
+    
         $driver->writeLog($logEntry);
     }
 
@@ -119,11 +126,9 @@ class Debug
      */
     public function render(): void
     {
-        if (PHP_SAPI === 'cli' || defined('STDIN')) {
-            $this->cliOutput->render($this->collector);
-        } else {
+        if (!Helpers::isCli() && Config::get('enable_debug_bar', true)) { 
             $this->debugBar->render($this->collector);
-        }        
+        }       
     }
 
     /**
@@ -180,4 +185,15 @@ class Debug
     {
         return $this->benchmark->getPeakMemory($name);
     }
+
+    /**
+     * Get the DataCollector instance.
+     *
+     * @return DataCollector
+     */
+    public function getCollector(): DataCollector
+    {
+        return $this->collector;
+    }
+
 }
