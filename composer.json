@@ -1,0 +1,73 @@
+{
+    "name": "artex/debug",
+    "description": "A powerful, lightweight debugging and profiling tool for PHP applications.",
+    "keywords": [
+        "php",
+        "debugging",
+        "profiler",
+        "artex",
+        "error-handling",
+        "performance-monitoring",
+        "artex-agency",
+        "debugging-tool",
+        "logging",
+        "php-library",
+        "php-debugger",
+        "debug-panel",
+        "artex-software",
+        "developer-tools",
+        "xdebug"
+    ],
+    "time":       "2025-02-03",
+    "type":       "library",
+    "license":    "Apache-2.0",
+    "homepage":   "https://github.com/artex-agency/artex-debug",
+    "support": {
+        "issues": "https://github.com/artex-agency/artex-debug/issues",
+        "docs":   "https://github.com/artex-agency/artex-debug/docs",
+        "source": "https://github.com/artex-agency/artex-debug"
+    },
+    "authors": [
+        {
+            "name":     "James Gober",
+            "email":    "me@jamesgober.com",
+            "homepage": "https://jamesgober.com/",
+            "role":     "Project Lead, Architect, Engineer, Developer, Designer"
+        }
+    ],
+    "require": {
+        "php":      ">=8.2",
+        "ext-json": "*",
+        "psr/log":  "^3.0",
+        "artex/logger": "^1.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^10.5",
+        "phpstan/phpstan": "^1.9",
+        "phpstan/phpstan-deprecation-rules": "^1.0",
+        "phpstan/phpstan-strict-rules": "^1.4",
+        "roave/security-advisories": "dev-latest"
+    },
+    "autoload": {
+        "psr-4": {
+            "Artex\\Debug\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Artex\\Debug\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "@php vendor/bin/phpunit && echo \"Tests completed!\"",
+        "phpstan": "@php vendor/bin/phpstan analyse && echo \"Static analysis completed!\"",
+        "check": [
+            "@composer validate",
+            "@phpstan",
+            "@test"
+        ],
+        "test:ci": "@php vendor/bin/phpunit --testdox"
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
